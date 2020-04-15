@@ -15,7 +15,19 @@ def crack_width_tencrack_inputs():
     sec_height = float(input('Section height(mm):'))
     cov_sec_rebar = float(input('Cover to Secondary tension side rebar(mm):'))
     nom_cover_main_rebar = float(input('Nominal Cover to Main tension side rebar(mm):'))
-    return (n_st_row, sec_ten_rebar_dia, sec_ten_rebar_spacing, n_mt_row, main_ten_rebar_dia, main_ten_rebar_spacing, rebar_fy, sec_breadth, sec_height, cov_sec_rebar, nom_cover_main_rebar)
+    print('')
+    b_moment = float(input('Moment(kN/m):'))
+    while True:
+        n_force = float(input('Norml force(kN) (+ve Tension only):'))
+        print('')
+        if n_force >= 0:
+            eccen = ((b_moment/n_force)*1000)
+            break
+        else:
+            print('input +ve value for tension force')
+            continue
+    print('')
+    return (n_st_row, sec_ten_rebar_dia, sec_ten_rebar_spacing, n_mt_row, main_ten_rebar_dia, main_ten_rebar_spacing, rebar_fy, sec_breadth, sec_height, cov_sec_rebar, nom_cover_main_rebar, b_moment, n_force, eccen)
 def rebar_area_tot_breadth(dia,spacing,breadth,n_row):
     # calculates total rebar_area of rebar in the input breadth
     rebar_area=((22/7)*(dia**2)/4)*(breadth/spacing)*n_row
@@ -30,7 +42,7 @@ def aci224r_table4_1_tolerable_crack_widths():
     print('D- Seawater and seawater spray; wetting and drying     0.15 mm')
     print('E- Water retaining structures                          0.10 mm')
     print('')
-n_st_row, sec_ten_rebar_dia, sec_ten_rebar_spacing, n_mt_row, main_ten_rebar_dia, main_ten_rebar_spacing, rebar_fy, sec_breadth, sec_height, cov_sec_rebar, nom_cover_main_rebar = crack_width_tencrack_inputs()
+n_st_row, sec_ten_rebar_dia, sec_ten_rebar_spacing, n_mt_row, main_ten_rebar_dia, main_ten_rebar_spacing, rebar_fy, sec_breadth, sec_height, cov_sec_rebar, nom_cover_main_rebar, b_moment, n_force, eccen = crack_width_tencrack_inputs()
 # total tension rebars in the input breadth
 tot_main_ten_rebar = sec_breadth*n_mt_row/main_ten_rebar_spacing
 #print('Total number of main tension bars = ',tot_main_ten_rebar)
@@ -39,20 +51,7 @@ tot_sec_ten_rebar_area = rebar_area_tot_breadth(sec_ten_rebar_dia, sec_ten_rebar
 tot_main_ten_rebar_area = rebar_area_tot_breadth(main_ten_rebar_dia, main_ten_rebar_spacing, sec_breadth, n_mt_row)
 #print('Secondary tension rebar area =',tot_sec_ten_rebar_area, 'mm2')
 #print('Main tension rebar area =',tot_main_ten_rebar_area, 'mm2')
-#print('')
-#print('')
-b_moment = float(input('Moment(kN/m):'))
-n_force = float(input('Norml force(kN) (+ve Tension only):'))
-print('')
-# calculations section
 # calculating eccentricities at rebar locations due to applied forces
-while True:
-    if n_force >= 0:
-        eccen = ((b_moment/n_force)*1000)
-        break
-    else:
-        print('input +ve value for tension force')
-        continue
 aci224r_table4_1_tolerable_crack_widths()
 while True:
     exp = input('Exposure condition: ')
@@ -76,24 +75,21 @@ while True:
         print('input correct Exposure condition')
         continue
 #print('Tolerable crack width = ',cond, 'mm')
-#print('')
 # calculating and checking stresses
 main_ten_force =(n_force*(sec_height/2+eccen-cov_sec_rebar))/(sec_height-fct-cov_sec_rebar)
 main_ten_Stress_rebar =(main_ten_force*1000/tot_main_ten_rebar_area)
 #print ('Tensile stress on main tension rebar =', main_ten_Stress_rebar, 'N/mm2')
 if main_ten_Stress_rebar <= 0.6*rebar_fy:
-    print ('Tensile stress on main tension rebar is less than 0.6*rebar_fy - Pass')
+    print ('Tensile stress on main tension rebar is less than 0.6*fy - Pass')
 else:
-    print ('Compressive stress on main compression rebar is larger than 0.6*rebar_fy - Tension Failure')
-#print('')
+    print ('Compressive stress on main compression rebar is larger than 0.6*fy - Tension Failure')
 sec_ten_force =(n_force*(sec_height/2-eccen-fct))/(sec_height-fct-cov_sec_rebar)
 sec_ten_Stress_rebar =(sec_ten_force*1000/tot_sec_ten_rebar_area)
 #print ('Tensile stress on secondary tension rebar =', sec_ten_Stress_rebar, 'N/mm2')
 if sec_ten_Stress_rebar <= 0.6*rebar_fy:
-    print ('Tensile stress on secondary tension rebar is less than 0.6*rebar_fy - Pass')
+    print ('Tensile stress on secondary tension rebar is less than 0.6*fy - Pass')
 else:
-    print ('Tensile stress on secondary tension rebar is larger than 0.6*rebar_fy - Tension Failure')
-#print('')
+    print ('Tensile stress on secondary tension rebar is larger than 0.6*fy - Tension Failure')
 # calculating and checking crack width
 # A area of concrete symmetric with reinforcing steel divided by number of bars
 a_symm =(2*sec_breadth*fct)/tot_main_ten_rebar
