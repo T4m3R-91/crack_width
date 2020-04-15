@@ -12,11 +12,17 @@ def crack_width_2waycrack_inputs():
     ten_rebar_spacing = float(input('Tension side rebar spacing(mm):'))
     rebar_fy = float(input('Rebar Yield strength(N/mm2):'))
     conc_fc = float(input('Concrete Compressive strength(N/mm2):'))
+    mod_elastic_rebar = float(input('Modulus of elasticity of Steel(kN/mm2):'))
+    mod_elastic_conc = float(input('Modulus of elasticity of Concrete(kN/mm2):'))
     sec_breadth = float(input('Section breadth(mm):'))
     sec_height = float(input('Section height(mm):'))
     cov_comp_rebar = float(input('Cover to compression side rebar(mm):'))
     nom_cover_tension_rebar = float(input('Nominal Cover to tension side rebar(mm):'))
-    return (n_c_row, comp_rebar_dia, comp_rebar_spacing, n_t_row, ten_rebar_dia, ten_rebar_spacing, rebar_fy, conc_fc, sec_breadth, sec_height, cov_comp_rebar, nom_cover_tension_rebar)
+    print('')
+    b_moment = float(input('Moment(kN/m):'))
+    n_force = float(input('Norml force(kN) (+ve Tension, -ve Compression):'))
+    print('')
+    return (n_c_row, comp_rebar_dia, comp_rebar_spacing, n_t_row, ten_rebar_dia, ten_rebar_spacing, rebar_fy, conc_fc, mod_elastic_rebar, mod_elastic_conc, sec_breadth, sec_height, cov_comp_rebar, nom_cover_tension_rebar, b_moment, n_force)
 def rebar_area_tot_breadth(dia,spacing,breadth,n_row):
     # calculates total rebar_area_tot_breadth of rebar in the input breadth
     rebar_area=((22/7)*(dia**2)/4)*(breadth/spacing)*n_row
@@ -47,7 +53,7 @@ def neutral_axis(es_ten,d_main_rebar,mod_rat,sec_breadth,tot_ten_rebar_area,tot_
                 if equit >= num_to_zero:
                     break
     return z_loc
-n_c_row, comp_rebar_dia, comp_rebar_spacing, n_t_row, ten_rebar_dia, ten_rebar_spacing, rebar_fy, conc_fc, sec_breadth, sec_height, cov_comp_rebar, nom_cover_tension_rebar = crack_width_2waycrack_inputs()
+n_c_row, comp_rebar_dia, comp_rebar_spacing, n_t_row, ten_rebar_dia, ten_rebar_spacing, rebar_fy, conc_fc, mod_elastic_rebar, mod_elastic_conc, sec_breadth, sec_height, cov_comp_rebar, nom_cover_tension_rebar, b_moment, n_force = crack_width_2waycrack_inputs()
 # total tension rebars in the input breadth
 tot_ten_rebar = sec_breadth*n_t_row/ten_rebar_spacing
 #print('Total number of tension bars = ',tot_ten_rebar)
@@ -57,16 +63,8 @@ tot_comp_rebar_area = rebar_area_tot_breadth(comp_rebar_dia, comp_rebar_spacing,
 tot_ten_rebar_area = rebar_area_tot_breadth(ten_rebar_dia, ten_rebar_spacing, sec_breadth, n_t_row)
 #print('Compression rebar area =',tot_comp_rebar_area, 'mm2')
 #print('Tension rebar area =',tot_ten_rebar_area, 'mm2')
-mod_elastic_rebar = float(input('Modulus of elasticity of Steel(kN/mm2):'))
-mod_elastic_conc = float(input('Modulus of elasticity of Concrete(kN/mm2):'))
 mod_rat = mod_elastic_rebar/mod_elastic_conc
 #print('Modular ratio', mod_rat)
-#print('')
-#rint('')
-b_moment = float(input('Moment(kN/m):'))
-n_force = float(input('Norml force(kN) (+ve Tension, -ve Compression):'))
-#print('')
-# calculations section
 # calculating eccentricities at rebar locations due to applied forces
 if n_force < 0:
     es_ten = ((b_moment/-1*n_force)*1000)+(sec_height/2)-cov_center_rebar
@@ -80,8 +78,6 @@ mom_cor = es_ten * n_force /1000
 # calculating section neutral axis location
 z_loc = neutral_axis(es_ten,d_main_rebar,mod_rat,sec_breadth,tot_ten_rebar_area,tot_comp_rebar_area,es_comp,cov_comp_rebar)
 #print ('Neutral axis Z =', z_loc, 'mm from compression fiber')
-#print('')
-print('')
 aci224r_table4_1_tolerable_crack_widths()
 while True:
     exp = input('Exposure condition: ')
@@ -105,29 +101,25 @@ while True:
         print('input correct Exposure condition')
         continue
 #print('Tolerable crack width = ',cond, 'mm')
-#print('')
 # calculating and checking stresses
 comp_Stress_conc =(mom_cor*1000000*z_loc)/(((sec_breadth*z_loc**2)/2*(d_main_rebar-(z_loc/3))+(mod_rat*tot_comp_rebar_area*(z_loc-cov_comp_rebar)*(d_main_rebar-cov_comp_rebar))))
 #print ('Compression stress on concrete =', comp_Stress_conc, 'N/mm2')
 if comp_Stress_conc <= 0.45*conc_fc:
-    print ('Compressive stress on concrete is less than 0.45*conc_fc - Pass')
+    print ('Compressive stress on concrete is less than 0.45*fc - Pass')
 else:
-    print ('Compressive stress on concrete is larger than 0.45*conc_fc - Compression Failure')
-#print('')
+    print ('Compressive stress on concrete is larger than 0.45*fc - Compression Failure')
 comp_Stress_rebar =(comp_Stress_conc/z_loc)*(z_loc-cov_comp_rebar)*mod_rat
 #print ('Compression stress on compression rebar =', comp_Stress_rebar, 'N/mm2')
 if comp_Stress_rebar <= 0.6*rebar_fy:
-    print ('Compressive stress on compression rebar is less than 0.6*rebar_fy - Pass')
+    print ('Compressive stress on compression rebar is less than 0.6*fy - Pass')
 else:
-    print ('Compressive stress on compression rebar is larger than 0.6*rebar_fy - Compression Failure')
-#print('')
+    print ('Compressive stress on compression rebar is larger than 0.6*fy - Compression Failure')
 ten_Stress_rebar =(comp_Stress_conc/z_loc)*(d_main_rebar-z_loc)*mod_rat
 #print ('Tensile stress on tension rebar =', ten_Stress_rebar, 'N/mm2')
 if ten_Stress_rebar <= 0.6*rebar_fy:
-    print ('Tensile stress on tension rebar is less than 0.6*rebar_fy - Pass')
+    print ('Tensile stress on tension rebar is less than 0.6*fy - Pass')
 else:
-    print ('Tensile stress on tension rebar is larger than 0.6*rebar_fy - Tension Failure')
-#print('')
+    print ('Tensile stress on tension rebar is larger than 0.6*fy - Tension Failure')
 # calculating and checking crack width
 # K fracture cooficient
 k_frac_coof = 0.000021
