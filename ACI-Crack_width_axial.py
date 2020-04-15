@@ -3,53 +3,39 @@ print('CRACK WIDTH CALCULATIONS ACCORDING TO ACI: 224R-018')
 print('')
 print('Tesnsion cracking')
 print('')
-n_st_row = input('Secondary tension side rebar number of rows:')
-in_st_row = int(n_st_row)
-sec_ten_rebar_dia = input('Secondary tension side rebar diameter(mm):')
-fcomp_rebar_dia = float(sec_ten_rebar_dia)
-sec_ten_rebar_spacing = input('Secondary tension side rebar spacing(mm):')
-fsec_ten_rebar_spacing = float(sec_ten_rebar_spacing)
-n_mt_row = input('Main tension side rebar number of rows:')
-in_mt_row = int(n_mt_row)
-main_ten_rebar_dia = input('Main tension side rebar diameter(mm):')
-fmain_ten_rebar_dia = float(main_ten_rebar_dia)
-main_ten_rebar_spacing = input('Main tension side rebar spacing(mm):')
-fmain_ten_rebar_spacing = float(main_ten_rebar_spacing)
-fy = input('Rebar Yield strength(N/mm2):')
-ffy = float(fy)
-b = input('Section breadth(mm):')
-fb = float(b)
+n_st_row = int(input('Secondary tension side rebar number of rows:'))
+sec_ten_rebar_dia = float(input('Secondary tension side rebar diameter(mm):'))
+sec_ten_rebar_spacing = float(input('Secondary tension side rebar spacing(mm):'))
+n_mt_row = int(input('Main tension side rebar number of rows:'))
+main_ten_rebar_dia = float(input('Main tension side rebar diameter(mm):'))
+main_ten_rebar_spacing = float(input('Main tension side rebar spacing(mm):'))
+fy = float(input('Rebar Yield strength(N/mm2):'))
+b = float(input('Section breadth(mm):'))
 # total tension rebars in the input breadth
-tot_main_ten_rebar = fb*in_mt_row/fmain_ten_rebar_spacing
-ftot_main_ten_rebar = float(tot_main_ten_rebar)
-print('Total number of main tension bars = ',ftot_main_ten_rebar)
-h = input('Section height(mm):')
-fh = float(h)
-cc = input('Cover to Secondary tension side rebar(mm):')
-fcc = float(cc)
-nct = input('Nominal Cover to Main tension side rebar(mm):')
-fnct = float(nct)
-fct = fnct+((in_mt_row/2)*fmain_ten_rebar_dia)+(((in_mt_row-1)/2)*fmain_ten_rebar_dia)
+tot_main_ten_rebar = b*n_mt_row/main_ten_rebar_spacing
+print('Total number of main tension bars = ',tot_main_ten_rebar)
+h = float(input('Section height(mm):'))
+cc = float(input('Cover to Secondary tension side rebar(mm):'))
+nct = float(input('Nominal Cover to Main tension side rebar(mm):'))
+fct = nct+((n_mt_row/2)*main_ten_rebar_dia)+(((n_mt_row-1)/2)*main_ten_rebar_dia)
 def area(dia,spc,br,ro):
     # calculates total area of rebar in the input breadth
     rebar_area=((22/7)*(dia**2)/4)*(br/spc)*ro
     return rebar_area
-tot_sec_ten_rebar_area = area(fcomp_rebar_dia, fsec_ten_rebar_spacing, fb, in_st_row)
-tot_main_ten_rebar_area = area(fmain_ten_rebar_dia, fmain_ten_rebar_spacing, fb, in_mt_row)
-print('Compression rebar area =',tot_sec_ten_rebar_area, 'mm2')
-print('Tension rebar area =',tot_main_ten_rebar_area, 'mm2')
+tot_sec_ten_rebar_area = area(sec_ten_rebar_dia, sec_ten_rebar_spacing, b, n_st_row)
+tot_main_ten_rebar_area = area(main_ten_rebar_dia, main_ten_rebar_spacing, b, n_mt_row)
+print('Secondary tension rebar area =',tot_sec_ten_rebar_area, 'mm2')
+print('Main tension rebar area =',tot_main_ten_rebar_area, 'mm2')
 print('')
 print('')
-mom = input('Moment(kN/m):')
-fmom = float(mom)
-nf = input('Norml force(kN) (+ve Tension only):')
-fnf = float(nf)
+mom = float(input('Moment(kN/m):'))
+nf = float(input('Norml force(kN) (+ve Tension only):'))
 print('')
 # calculations section
 # calculating eccentricities at rebar locations due to applied forces
 while True:
-    if fnf >= 0:
-        eccen = ((fmom/fnf)*1000)
+    if nf >= 0:
+        eccen = ((mom/nf)*1000)
         break
     else:
         print('input +ve value for tension force')
@@ -87,25 +73,25 @@ while True:
 print('Tolerable crack width = ',cond, 'mm')
 print('')
 # calculating and checking stresses
-main_ten_force =(fnf*(fh/2+eccen-fcc))/(fh-fct-fcc)
+main_ten_force =(nf*(h/2+eccen-cc))/(h-fct-cc)
 main_ten_Stress_rebar =(main_ten_force*1000/tot_main_ten_rebar_area)
 print ('Tensile stress on main tension rebar =', main_ten_Stress_rebar, 'N/mm2')
-if main_ten_Stress_rebar <= 0.6*ffy:
+if main_ten_Stress_rebar <= 0.6*fy:
     print ('Tensile stress on main tension rebar is less than 0.6*Fy - Pass')
 else:
     print ('Compressive stress on main compression rebar is larger than 0.6*Fy - Tension Failure')
 print('')
-sec_ten_force =(fnf*(fh/2-eccen-fct))/(fh-fct-fcc)
+sec_ten_force =(nf*(h/2-eccen-fct))/(h-fct-cc)
 sec_ten_Stress_rebar =(sec_ten_force*1000/tot_sec_ten_rebar_area)
 print ('Tensile stress on secondary tension rebar =', sec_ten_Stress_rebar, 'N/mm2')
-if sec_ten_Stress_rebar <= 0.6*ffy:
+if sec_ten_Stress_rebar <= 0.6*fy:
     print ('Tensile stress on secondary tension rebar is less than 0.6*Fy - Pass')
 else:
     print ('Tensile stress on secondary tension rebar is larger than 0.6*Fy - Tension Failure')
 print('')
 # calculating and checking crack width
 # A area of concrete symmetric with reinforcing steel divided by number of bars
-a_symm =(2*fb*fct)/tot_main_ten_rebar
+a_symm =(2*b*fct)/tot_main_ten_rebar
 # crack width in mm
 # 1 N/mm2 = 0.145 KSI (Kilo pound force per square inch)
 # 1 in3 = 16387 mm3
